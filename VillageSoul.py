@@ -20,7 +20,7 @@ def render_village_restaurant_page():
     # Display Menu
     st.write("### Menu")
     # Load Menu from CSV
-    menu_file = "Village_menu_items.csv"  # Ensure this file exists in the project directory
+    menu_file = "Village_menu_items.csv"  
     try:
         menu_df = pd.read_csv(menu_file)
 
@@ -48,10 +48,9 @@ def render_village_restaurant_page():
                     st.write(f"### {row['Price']}")
                 st.divider()
 
-        # Display current page number
+        # Display current page 
         st.write(f"Page {page} of {total_pages}")
 
-        # Buttons to navigate pages below the menu items
         col1, col2 = st.columns([1, 1])
         with col1:
             prev_button = st.button("Previous Page")
@@ -71,9 +70,9 @@ def render_village_restaurant_page():
         st.error(f"An error occurred while loading the menu: {e}")
 
     def render_popular_times_chart():
-        # Data for popular times (hours of the day and corresponding popularity percentages for each day)
+
         hours = ['6a', '7a', '8a', '9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p']
-        # Example data for all days except Tuesday (Holiday)
+
         data = {
             'Monday': [0, 7, 16, 26, 27, 0, 46, 65, 81, 72, 55, 0, 0, 0, 0, 0, 0, 0],
             'Wednesday': [0, 8, 18, 28, 29, 0, 47, 66, 82, 74, 57, 0, 0, 0, 0, 0, 0, 0],
