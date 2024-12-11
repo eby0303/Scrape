@@ -85,14 +85,12 @@ def render_village_restaurant_page():
         # Convert the data into a DataFrame
         df = pd.DataFrame(data, index=hours)
 
-        # Create the bar chart using Streamlit's native bar chart function
         st.bar_chart(df)
         
         st.info("Scraped from google maps")
-    # Call this function in your Streamlit app to display the chart
     render_popular_times_chart()
 
 
-    # Footer Section
+
     st.write("---")
-    st.write("Powered by Streamlit | Developed with ❤️")
+    st.write("Powered by Streamlit | Developed with ❤️ by eby0303")
