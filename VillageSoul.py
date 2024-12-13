@@ -1,96 +1,84 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+import requests
+from datetime import datetime
+import matplotlib.pyplot as plt
+
+# OpenWeather API configuration
+OPENWEATHER_API_KEY = "af8065e15aff4259be0ac375e7316f11"
+VILLAGE_LOCATION = {"lat": 40.7683, "lon": -73.5251}  # Hicksville, NY
+
+def fetch_weather():
+    url = ("https://api.openweathermap.org/data/2.5/weather?lat="
+           f"{VILLAGE_LOCATION['lat']}&lon={VILLAGE_LOCATION['lon']}&appid={OPENWEATHER_API_KEY}")
+    response = requests.get(url)
+    if response.status_code == 200:
+        weather_data = response.json()
+        temp_k = weather_data['main']['temp']
+        temp_f = (temp_k - 273.15) * 9/5 + 32
+        rain = weather_data.get('weather', [{}])[0].get('main', '').lower() in ['rain', 'snow']
+        return temp_f, rain
+    else:
+        st.error("Error fetching weather data")
+        return None, None
+
+def adjust_prices(menu_df, busy_times, temp, rain):
+    current_time = datetime.now().strftime("%I %p").lower()
+    current_day = datetime.now().strftime("%A")
+
+    busy_score = busy_times.get(current_day, {}).get(current_time, 0)
+    busy_threshold = 50
+    
+    adjusted_prices = []
+    for _, row in menu_df.iterrows():
+        base_price = row['Village Price']
+        low_competitive_price = row['Low Price']
+        high_competitive_price = row['High Price']
+
+        if temp < 45 or rain or busy_score > busy_threshold:
+            adjusted_price = max(base_price, high_competitive_price)
+        else:
+            adjusted_price = min(base_price, low_competitive_price)
+        adjusted_prices.append(adjusted_price)
+    menu_df['Adjusted Price'] = adjusted_prices
+    return menu_df
 
 def render_village_restaurant_page():
-    # Restaurant Information
-    restaurant_name = "Village: The Soul of India"
-    restaurant_address = "123 Main Street, Hicksville, NY 11801"
-    opening_time = "11:00 AM"
-    closing_time = "10:00 PM"
+    # Load data from uploaded file
+    uploaded_file = "menu_price_comparison2.csv"
+    menu_df = pd.read_csv(uploaded_file)
 
-    # Header Section
-    st.title(f"{restaurant_name}")
+    busy_times = {
+        'Monday': {"12 pm": 46, "1 pm": 65, "2 pm": 81, "3 pm": 72, "4 pm": 55},
+        'Wednesday': {"12 pm": 45, "1 pm": 78, "2 pm": 100, "3 pm": 83, "4 pm": 55},
+        # Add more days as needed
+    }
 
-    # Restaurant Info Section
-    st.write("## Restaurant Details")
-    st.write(f"### Address: *{restaurant_address}*")
-    st.write("### Opening Hours: *11:00 AM - 3:00 PM, 5:00 PM - 10:00 PM*")
+    st.title("Village: The Soul of India")
+    st.write("### Live Adjusted Prices")
 
-    # Display Menu
+    temp, rain = fetch_weather()
+    if temp is not None:
+        st.write(f"#### Current Temperature: {temp:.2f}°F")
+        st.write(f"#### Weather Condition: {'Rainy/Snowy' if rain else 'Clear'}")
+
+    menu_df = adjust_prices(menu_df, busy_times, temp, rain)
+
     st.write("### Menu")
-    # Load Menu from CSV
-    menu_file = "Village_menu_items.csv"  
-    try:
-        menu_df = pd.read_csv(menu_file)
+    st.dataframe(menu_df[['Name', 'Village Price', 'Low Price', 'High Price', 'Adjusted Price']])
 
-        # Paginated Menu Display
-        items_per_page = 10
-        total_items = len(menu_df)
-        total_pages = (total_items + items_per_page - 1) // items_per_page
-
-        if 'page' not in st.session_state:
-            st.session_state.page = 1
-
-        # Display current page
-        page = st.session_state.page
-        start_idx = (page - 1) * items_per_page
-        end_idx = start_idx + items_per_page
-
-        # Display Menu Items for Selected Page
-        for _, row in menu_df.iloc[start_idx:end_idx].iterrows():
-            with st.container():
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"**{row['Name']}**")
-                    st.caption(row.get('Description', "No description available"))
-                with col2:
-                    st.write(f"### {row['Price']}")
-                st.divider()
-
-        # Display current page 
-        st.write(f"Page {page} of {total_pages}")
-
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            prev_button = st.button("Previous Page")
-            if prev_button and st.session_state.page > 1:
-                st.session_state.page -= 1
-        with col2:
-            next_button = st.button("Next Page")
-            if next_button and st.session_state.page < total_pages:
-                st.session_state.page += 1
-        st.info("Restaurant Details and Menu Scraped from Yelp")                 
-        st.divider()
-        st.divider()     
-    
-    except FileNotFoundError:
-        st.error(f"Menu file '{menu_file}' not found. Please ensure it is available.")
-    except Exception as e:
-        st.error(f"An error occurred while loading the menu: {e}")
-
-    def render_popular_times_chart():
-
-        hours = ['6a', '7a', '8a', '9a', '10a', '11a', '12p', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p']
-
-        data = {
-            'Monday': [0, 7, 16, 26, 27, 0, 46, 65, 81, 72, 55, 0, 0, 0, 0, 0, 0, 0],
-            'Wednesday': [0, 8, 18, 28, 29, 0, 47, 66, 82, 74, 57, 0, 0, 0, 0, 0, 0, 0],
-            'Thursday': [0, 6, 15, 25, 26, 0, 44, 62, 80, 70, 53, 0, 0, 0, 0, 0, 0, 0],
-            'Friday': [0, 9, 17, 27, 28, 0, 48, 67, 83, 75, 58, 0, 0, 0, 0, 0, 0, 0],
-            'Saturday': [0, 5, 14, 24, 25, 0, 43, 61, 79, 69, 52, 0, 0, 0, 0, 0, 0, 0],
-            'Sunday': [0, 10, 20, 30, 31, 0, 49, 68, 84, 76, 59, 0, 0, 0, 0, 0, 0, 0]
-        }
-
-        # Convert the data into a DataFrame
-        df = pd.DataFrame(data, index=hours)
-
-        st.bar_chart(df)
-        
-        st.info("Scraped from google maps")
-    render_popular_times_chart()
-
-
+    st.write("### Busy Times Graph")
+    # Plot busy times graph
+    fig, ax = plt.subplots()
+    for day, times in busy_times.items():
+        ax.plot(times.keys(), times.values(), label=day)
+    ax.set_title("Busy Times per Day")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Busy Score")
+    ax.legend()
+    st.pyplot(fig)
 
     st.write("---")
-    st.write("Powered by Streamlit | Developed with ❤️ by eby0303")
+    st.write("Powered by Streamlit | Developed with ❤️")
+
+render_village_restaurant_page()
