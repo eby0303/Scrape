@@ -27,7 +27,7 @@ def adjust_prices(menu_df, busy_times, temp, rain):
     current_day = datetime.now().strftime("%A")
 
     busy_score = busy_times.get(current_day, {}).get(current_time, 0)
-    busy_threshold = 50  # ensure this is an integer
+    busy_threshold = 50 
 
     adjusted_prices = []
     for _, row in menu_df.iterrows():
