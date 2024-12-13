@@ -190,7 +190,8 @@ def render_village_restaurant_page():
         st.info("Scraped Busy Time from Google Maps")
 
     render_popular_times_chart()
-
+    st.divider()
+    st.link_button("Visit the Official Website", "https://www.villagesoulofindia.com/site/index")
     st.write("---")
     st.write("Powered by Streamlit | Developed with ❤️")
 
