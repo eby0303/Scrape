@@ -8,7 +8,6 @@ def competitors_display():
                 "House_menu_items_comparison.csv", "Taste_menu_items_comparison.csv", 
                 "World_menu_items_comparison.csv"]
 
-    # Dictionary of full restaurant names and their corresponding Yelp URLs
     restaurant_links = {
         "Chennai Dosas": "https://www.yelp.com/biz/chennai-dosas-hicksville?osq=Indian+Vegetarian",
         "Hillside Dosa Hut": "https://www.yelp.com/biz/hillside-dosa-hutt-glen-oaks",
@@ -19,19 +18,19 @@ def competitors_display():
 
     st.title("Main Menu - Village: The Soul of India")
 
-    # Display the village menu (first 10 items)
+   
     village_table = village_menu[['Name', 'Description', 'Village_Price', 'Highest_Price', 'Lowest_Price', 'Comparison_Status']]
     st.write("### Village: The Soul of India Menu")
     st.dataframe(village_table, height=300, use_container_width=True)
 
 
 
-    # Loop through each comparative menu
+ 
     for menu_file in menu_files:
         comparative_menu = pd.read_csv(menu_file)
-        menu_name = menu_file.split("_")[0]  # Extracts the first part of the file name as the menu name
+        menu_name = menu_file.split("_")[0] 
         
-        # Display the full restaurant name
+       
         full_name = {
             "Chennai": "Chennai Dosas",
             "Hillside": "Hillside Dosa Hut",
