@@ -1,3 +1,112 @@
+# import streamlit as st
+# import pandas as pd
+# import plotly.graph_objects as go
+
+# def render_village_restaurant_page():
+#     # Restaurant Information
+#     restaurant_name = "Village: The Soul of India"
+#     restaurant_address = "123 Main Street, Hicksville, NY 11801"
+#     opening_time = "11:00 AM"
+#     closing_time = "10:00 PM"
+
+#     # Header Section
+#     st.title(f"{restaurant_name}")
+
+#     # Restaurant Info Section
+#     st.write("## Restaurant Details")
+#     st.write(f"### Address: *{restaurant_address}*")
+#     st.write("### Opening Hours: *11:00 AM - 3:00 PM, 5:00 PM - 10:00 PM*")
+
+#     # Display Menu
+#     st.write("### Menu")
+#     # Load Menu from CSV
+#     menu_file = "Village_menu_items.csv"  
+#     try:
+#         menu_df = pd.read_csv(menu_file)
+
+#         # Paginated Menu Display
+#         items_per_page = 10
+#         total_items = len(menu_df)
+#         total_pages = (total_items + items_per_page - 1) // items_per_page
+
+#         if 'page' not in st.session_state:
+#             st.session_state.page = 1
+
+#         # Display current page
+#         page = st.session_state.page
+#         start_idx = (page - 1) * items_per_page
+#         end_idx = start_idx + items_per_page
+
+#         # Display Menu Items for Selected Page
+#         for _, row in menu_df.iloc[start_idx:end_idx].iterrows():
+#             with st.container():
+#                 col1, col2 = st.columns([3, 1])
+#                 with col1:
+#                     st.write(f"**{row['Name']}**")
+#                     st.caption(row.get('Description', "No description available"))
+#                 with col2:
+#                     st.write(f"### {row['Price']}")
+#                 st.divider()
+
+#         # Display current page 
+#         st.write(f"Page {page} of {total_pages}")
+
+#         col1, col2 = st.columns([1, 1])
+#         with col1:
+#             prev_button = st.button("Previous Page")
+#             if prev_button and st.session_state.page > 1:
+#                 st.session_state.page -= 1
+#         with col2:
+#             next_button = st.button("Next Page")
+#             if next_button and st.session_state.page < total_pages:
+#                 st.session_state.page += 1
+#         st.info("Restaurant Details and Menu Scraped from Yelp")                 
+#         st.divider()
+#         st.divider()     
+    
+#     except FileNotFoundError:
+#         st.error(f"Menu file '{menu_file}' not found. Please ensure it is available.")
+#     except Exception as e:
+#         st.error(f"An error occurred while loading the menu: {e}")
+
+#     def render_popular_times_chart():
+#         # Define hours
+#         hours = ['6 am', '7 am', '8 am', '9 am', '10 am', '11 am', '12 pm', 
+#                 '1 pm', '2 pm', '3 pm', '4 pm', '5 pm', '6 pm', '7 pm', 
+#                 '8 pm', '9 pm', '10 pm', '11 pm']
+
+#         # Define the data
+#         data = {
+#             'Monday': [0, 0, 0, 0, 0, 7, 16, 26, 27, 0, 0, 46, 65, 81, 72, 55, 0, 0],
+#             'Wednesday': [0, 0, 0, 0, 0, 29, 29, 31, 25, 0, 0, 45, 78, 100, 83, 55, 0, 0],
+#             'Thursday': [0, 0, 0, 0, 0, 13, 25, 29, 25, 0, 0, 26, 40, 62, 58, 43, 0, 0],
+#             'Friday': [0, 0, 0, 0, 0, 25, 41, 40, 32, 0, 0, 34, 64, 82, 77, 53, 0, 0],
+#             'Saturday': [0, 0, 0, 0, 0, 25, 48, 55, 53, 0, 0, 37, 54, 72, 74, 56, 0, 0],
+#             'Sunday': [0, 0, 0, 0, 0, 22, 45, 63, 55, 0, 0, 49, 81, 89, 77, 46, 0, 0]
+#         }
+
+#         # Convert the data into a DataFrame
+#         df = pd.DataFrame(data, index=hours)
+
+#         # Ensure hours are in correct order using a categorical index
+#         df.index = pd.CategoricalIndex(df.index, categories=hours, ordered=True)
+
+#         # Sort the index (ensures it stays in order for the bar chart)
+#         df = df.sort_index()
+
+#         # Render bar chart
+#         st.bar_chart(df)
+#         st.info("Scraped Popularity Time from Google Maps")
+
+#     render_popular_times_chart()
+
+
+
+#     st.write("---")
+#     st.write("Powered by Streamlit | Developed with ❤️ by eby0303")
+
+
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -27,22 +136,24 @@ def adjust_prices(menu_df, busy_times, temp, rain):
     current_day = datetime.now().strftime("%A")
 
     busy_score = busy_times.get(current_day, {}).get(current_time, 0)
-    busy_threshold = 50
-    
+    busy_threshold = 50  # ensure this is an integer
+
     adjusted_prices = []
     for _, row in menu_df.iterrows():
-        base_price = row.get('Village Price', 0)
-        low_competitive_price = row.get('Low Price', 0)
-        high_competitive_price = row.get('High Price', 0)
+        # Remove dollar sign and spaces, then convert to float
+        base_price = float(row.get('Village_Price', '0').replace('$', '').replace(' ', ''))
+        low_competitive_price = float(row.get('Lowest_Price', '0').replace('$', '').replace(' ', ''))
+        high_competitive_price = float(row.get('Highest_Price', '0').replace('$', '').replace(' ', ''))
 
+        # Compare prices
         if temp < 45 or rain or busy_score > busy_threshold:
             adjusted_price = max(base_price, high_competitive_price)
         else:
             adjusted_price = min(base_price, low_competitive_price)
         adjusted_prices.append(adjusted_price)
-    menu_df['Adjusted Price'] = adjusted_prices
-    return menu_df
 
+    menu_df['Adjusted_Price'] = adjusted_prices
+    return menu_df
 
 def render_village_restaurant_page():
     # Load data from uploaded file
@@ -68,68 +179,97 @@ def render_village_restaurant_page():
         'Sunday': [0, 0, 0, 0, 0, 22, 45, 63, 55, 0, 0, 49, 81, 89, 77, 46, 0, 0]
     }
 
-    st.title("Village: The Soul of India")
-    st.write("### Live Adjusted Prices")
+    # Restaurant Information
+    restaurant_name = "Village: The Soul of India"
+    restaurant_address = "123 Main Street, Hicksville, NY 11801"
+    opening_time = "11:00 AM"
+    closing_time = "10:00 PM"
+
+    # Header Section
+    st.title(f"{restaurant_name}")
+
+    # Restaurant Info Section
+    st.write("## Restaurant Details")
+    st.write(f"### Address: *{restaurant_address}*")
+    st.write("### Opening Hours: *11:00 AM - 3:00 PM, 5:00 PM - 10:00 PM*")
 
     temp, rain = fetch_weather()
     if temp is not None:
-        st.write(f"#### Current Temperature: {temp:.2f}°F")
-        st.write(f"#### Weather Condition: {'Rainy/Snowy' if rain else 'Clear'}")
+        st.write(f"#### Current Temperature: *{temp:.2f}°F*")
+        st.write(f"#### Weather Condition: *{'Rainy/Snowy' if rain else 'Clear'}*")
 
     busy_times_dict = {day: dict(zip(hours, values)) for day, values in busy_times.items()}
 
     menu_df = adjust_prices(menu_df, busy_times_dict, temp, rain)
 
-    st.write("### Menu")
-    st.dataframe(menu_df[['Name', 'Village Price', 'Low Price', 'High Price', 'Adjusted Price']])
+    # Paginated Menu Display
+    items_per_page = 10
+    total_items = len(menu_df)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
 
-    st.write("### Busy Times Graph")
-    # Plot busy times graph
-    fig, ax = plt.subplots()
-    for day, values in busy_times.items():
-        ax.plot(hours, values, label=day)
-    ax.set_title("Busy Times per Day")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Busy Score")
-    ax.legend()
-    st.pyplot(fig)
+    if 'page' not in st.session_state:
+        st.session_state.page = 1
 
-    st.write("---")
-    st.write("Powered by Streamlit | Developed with ❤️")
-def render_village_restaurant_page():
-    # Load data from uploaded file
-    uploaded_file = "menu_price_comparison2.csv"
-    menu_df = pd.read_csv(uploaded_file)
+    # Display current page
+    page = st.session_state.page
+    start_idx = (page - 1) * items_per_page
+    end_idx = start_idx + items_per_page
 
-    busy_times = {
-        'Monday': {"12 pm": 46, "1 pm": 65, "2 pm": 81, "3 pm": 72, "4 pm": 55},
-        'Wednesday': {"12 pm": 45, "1 pm": 78, "2 pm": 100, "3 pm": 83, "4 pm": 55},
-        # Add more days as needed
-    }
+    # Display Menu Items for Selected Page
+    st.write("### Live Menu")
+    for _, row in menu_df.iloc[start_idx:end_idx].iterrows():
+        with st.container():
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write(f"**{row['Name']}**")
+                st.caption(row.get('Description', "No description available"))
+            with col2:
+                st.write(f"### ${row['Adjusted_Price']}")
+            st.divider()
 
-    st.title("Village: The Soul of India")
-    st.write("### Live Adjusted Prices")
+    # Display current page
+    st.write(f"Page {page} of {total_pages}")
 
-    temp, rain = fetch_weather()
-    if temp is not None:
-        st.write(f"#### Current Temperature: {temp:.2f}°F")
-        st.write(f"#### Weather Condition: {'Rainy/Snowy' if rain else 'Clear'}")
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        prev_button = st.button("Previous Page")
+        if prev_button and st.session_state.page > 1:
+            st.session_state.page -= 1
+    with col2:
+        next_button = st.button("Next Page")
+        if next_button and st.session_state.page < total_pages:
+            st.session_state.page += 1
 
-    menu_df = adjust_prices(menu_df, busy_times, temp, rain)
+    def render_popular_times_chart():
+        # Define hours
+        hours = ['6 am', '7 am', '8 am', '9 am', '10 am', '11 am', '12 pm', 
+                '1 pm', '2 pm', '3 pm', '4 pm', '5 pm', '6 pm', '7 pm', 
+                '8 pm', '9 pm', '10 pm', '11 pm']
 
-    st.write("### Menu")
-    st.dataframe(menu_df[['Name', 'Village Price', 'Low Price', 'High Price', 'Adjusted Price']])
+        # Define the data
+        data = {
+            'Monday': [0, 0, 0, 0, 0, 7, 16, 26, 27, 0, 0, 46, 65, 81, 72, 55, 0, 0],
+            'Wednesday': [0, 0, 0, 0, 0, 29, 29, 31, 25, 0, 0, 45, 78, 100, 83, 55, 0, 0],
+            'Thursday': [0, 0, 0, 0, 0, 13, 25, 29, 25, 0, 0, 26, 40, 62, 58, 43, 0, 0],
+            'Friday': [0, 0, 0, 0, 0, 25, 41, 40, 32, 0, 0, 34, 64, 82, 77, 53, 0, 0],
+            'Saturday': [0, 0, 0, 0, 0, 25, 48, 55, 53, 0, 0, 37, 54, 72, 74, 56, 0, 0],
+            'Sunday': [0, 0, 0, 0, 0, 22, 45, 63, 55, 0, 0, 49, 81, 89, 77, 46, 0, 0]
+        }
 
-    st.write("### Busy Times Graph")
-    # Plot busy times graph
-    fig, ax = plt.subplots()
-    for day, times in busy_times.items():
-        ax.plot(times.keys(), times.values(), label=day)
-    ax.set_title("Busy Times per Day")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Busy Score")
-    ax.legend()
-    st.pyplot(fig)
+        # Convert the data into a DataFrame
+        df = pd.DataFrame(data, index=hours)
+
+        # Ensure hours are in correct order using a categorical index
+        df.index = pd.CategoricalIndex(df.index, categories=hours, ordered=True)
+
+        # Sort the index (ensures it stays in order for the bar chart)
+        df = df.sort_index()
+
+        # Render bar chart
+        st.bar_chart(df)
+        st.info("Scraped Popularity Time from Google Maps")
+
+    render_popular_times_chart()
 
     st.write("---")
     st.write("Powered by Streamlit | Developed with ❤️")
